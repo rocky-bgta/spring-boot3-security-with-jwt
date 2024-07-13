@@ -1,16 +1,19 @@
 package com.salahin.springsecurity.model;
 
-public class AuthenticationRequest {
+import lombok.Data;
+
+@Data
+public class AuthRequest {
 
 	private String username;
 	private String password;
 
-	public AuthenticationRequest(String username, String password) {
+	public AuthRequest(String username, String password) {
 		this.username = username;
 		this.password = password;
 	}
 
-	public AuthenticationRequest() {
+	public AuthRequest() {
 	}
 
 	public String getUsername() {

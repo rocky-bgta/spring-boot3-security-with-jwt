@@ -1,9 +1,11 @@
 package com.salahin.springsecurity.configuration;
 
+import com.salahin.springsecurity.model.AuthResponse;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Example;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -19,23 +21,31 @@ import java.util.function.Function;
 public class JwtTokenUtil {
 
     @Value("${jwt.secret}")
-    private String secret;
+    private String SECRET;
 
-    public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
+    //public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
 
-    //private final long jwtAccessExpirationInMs = 1000 * 60 * 15; // 15 minutes
+    private final long jwtAccessExpirationInMs = 1000 * 60 * 15; // 15 minutes
     //private final long jwtRefreshExpirationInMs = 1000 * 60 * 60 * 24 * 7; // 7 days
 
-    @Value("${jwt.expirationDateInMs}")
-    private int jwtExpirationInMs;
+    //@Value("${jwt.expirationDateInMs}")
+    //private int jwtExpirationInMs;
 
     @Value("${jwt.refreshExpirationDateInMs}")
     private int refreshExpirationDateInMs;
 
     // generate token for user
-    public String generateToken(UserDetails userDetails) {
+    public AuthResponse getAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        return doGenerateToken(claims, userDetails.getUsername());
+        String accessToken = doGenerateToken(claims, userDetails.getUsername());
+        long minutes = convertMillisecondsToMinutes(jwtAccessExpirationInMs);
+        AuthResponse authResponse = AuthResponse.builder()
+                .access_token(accessToken)
+                .token_type("Bearer")
+                .expires_in(minutes+"M")
+                .build();
+
+        return authResponse;
     }
 
     private String doGenerateToken(Map<String, Object> claims, String subject) {
@@ -43,7 +53,7 @@ public class JwtTokenUtil {
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationInMs))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtAccessExpirationInMs))
                 // .signWith(SignatureAlgorithm.HS512, secret).compact();
                 .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
     }
@@ -102,5 +112,10 @@ public class JwtTokenUtil {
     private Key getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    // Convert milliseconds to minutes
+    public static long convertMillisecondsToMinutes(long milliseconds) {
+        return milliseconds / (1000 * 60);
     }
 }

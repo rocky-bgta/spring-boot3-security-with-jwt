@@ -20,8 +20,6 @@ import java.util.Map;
 @Service
 public class SlackJwtTokenUtil {
 
-    //private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
-
     private static final String SLACK_JWKS_URL = "https://slack.com/openid/connect/keys";
     private final Map<String, PublicKey> publicKeys = new HashMap<>();
 
@@ -58,7 +56,8 @@ public class SlackJwtTokenUtil {
     }
 
     private Claims getAllClaimsFromToken(String token) {
-        String kid = "mB2MAyKSn555isd0EbdhKx6nkyAi9xLq8rvCEb_nOyY";
+       // String kid = "mB2MAyKSn555isd0EbdhKx6nkyAi9xLq8rvCEb_nOyY";
+        String kid = getKidFromToken(token);
         PublicKey publicKey = getSigningKey(kid);
 
         return Jwts.parserBuilder()
@@ -68,12 +67,29 @@ public class SlackJwtTokenUtil {
                 .getBody();
     }
 
-    private String getKidFromToken(String token) {
+   /* private String getKidFromToken(String token) {
         return Jwts.parserBuilder()
                 .build()
                 .parseClaimsJws(token)
                 .getHeader()
                 .getKeyId();
+
+
+    }*/
+
+    private String getKidFromToken(String token) {
+        String[] parts = token.split("\\.");
+        if (parts.length < 2) {
+            throw new IllegalArgumentException("Invalid JWT token");
+        }
+        String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]));
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode header = objectMapper.readTree(headerJson);
+            return header.get("kid").asText();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse JWT header", e);
+        }
     }
 
     public boolean isTokenExpired(String token) {
@@ -84,28 +100,4 @@ public class SlackJwtTokenUtil {
             return true;
         }
     }
-
-    /*public boolean validateToken(String token) {
-        try {
-            getAllClaimsFromToken(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }*/
-
-   /* public boolean validateToken(String token) {
-        try {
-            getAllClaimsFromToken(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }*/
-
-  /*  public String getUsernameFromToken(String jwtToken) {
-        return null;
-    }*/
-
-    // Add methods to extract specific claims if needed
 }

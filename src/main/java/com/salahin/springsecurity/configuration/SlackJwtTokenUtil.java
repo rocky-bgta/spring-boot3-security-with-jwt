@@ -12,10 +12,7 @@ import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class SlackJwtTokenUtil {
@@ -100,4 +97,10 @@ public class SlackJwtTokenUtil {
             return true;
         }
     }
+
+    public Map<String, Object> getAllClaimsAsMap(String token) {
+        Claims claims = getAllClaimsFromToken(token);
+        return new HashMap<>(claims);
+    }
+
 }

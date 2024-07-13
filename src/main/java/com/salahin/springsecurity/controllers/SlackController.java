@@ -21,6 +21,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class SlackController {
@@ -88,6 +91,10 @@ public class SlackController {
 
         String accessToken = extractAccessTokenFromResponse(response.getBody());
         String idToken = extractIdTokenFromResponse(response.getBody());
+        Map<String, Object> claims = new HashMap<>();
+        claims = slackJwtTokenUtil.getAllClaimsAsMap(idToken);
+
+
 
         session.setAttribute("access_token", accessToken);
 

@@ -60,7 +60,11 @@ public class SecurityConfiguration{
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(new AntPathRequestMatcher("/admin-user")).hasRole("ADMIN")
 						.requestMatchers(new AntPathRequestMatcher("/normal-user")).hasAnyRole("ADMIN", "USER")
-						.requestMatchers(new AntPathRequestMatcher("/authenticate"), new AntPathRequestMatcher("/register")).permitAll()
+
+						.requestMatchers(
+								new AntPathRequestMatcher("/authenticate"),
+								new AntPathRequestMatcher("/register"),
+								new AntPathRequestMatcher("/slack/**")).permitAll()
 						.anyRequest().authenticated()
 				)
 				.exceptionHandling(exceptionHandling ->

@@ -1,20 +1,17 @@
 package com.salahin.springsecurity.configuration;
 
 import com.salahin.springsecurity.entity.JwtTokenInfoEntity;
-import com.salahin.springsecurity.model.AuthResponse;
 import com.salahin.springsecurity.repository.JwtTokenRepository;
 import com.salahin.springsecurity.service.JwtTokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Header;
-import io.jsonwebtoken.impl.DefaultClaims;
 import io.jsonwebtoken.impl.DefaultHeader;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,7 +20,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -65,11 +61,10 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
                 username = claimsMap.get("sub").toString();
 
-                // username = jwtTokenUtil.getUsernameFromToken(jwtToken);
-
-            } else {
-                logger.warn("JWT Token does not begin with Bearer String");
             }
+            /* else {
+                logger.warn("JWT Token does not begin with Bearer String");
+            }*/
 
             // if token is valid and not expired
             if (!isAccessTokenExpired && username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -96,6 +91,9 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
                 /* retrieved refreshed token for DB */
                 JwtTokenInfoEntity jwtTokenInfoEntity = jwtTokenRepository.findByUsername(username);
+                if(jwtTokenInfoEntity != null) {
+                   throw new IllegalArgumentException("Invalid JWT token");
+                }
 
                 String refreshedToken = jwtTokenInfoEntity.getRefreshedToken();
 
@@ -126,7 +124,7 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
 
-        } catch (ExpiredJwtException ex) {
+        } catch (ExpiredJwtException | IllegalArgumentException ex) {
             System.out.println("Unable to get JWT Token");
             request.setAttribute("exception", ex);
 

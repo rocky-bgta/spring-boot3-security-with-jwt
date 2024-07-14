@@ -16,10 +16,15 @@ public class JwtTokenService {
     @Autowired
     UserRepository userRepository;
 
-    public void saveTokenInfo(String username, String accessToken){
+    public void saveTokenInfo(String username, String accessToken,Long accessTokenTime,
+                              String refreshToken, Long refreshTokenTime, String tokenType){
         UserEntity user = userRepository.findByUsername(username);
         JwtTokenInfoEntity jwtTokenInfoEntity = new JwtTokenInfoEntity();
         jwtTokenInfoEntity.setAccessToken(accessToken);
+        jwtTokenInfoEntity.setAccessTokenExpIn(accessTokenTime);
+        jwtTokenInfoEntity.setRefreshedToken(refreshToken);
+        jwtTokenInfoEntity.setRefreshedTokenExpIn(refreshTokenTime);
+        jwtTokenInfoEntity.setTokenType(tokenType);
         jwtTokenInfoEntity.setUserId(user.getId().toString());
         jwtTokenInfoEntity.setUsername(username);
         jwtTokenInfoEntity.setStatus(true);
@@ -30,6 +35,24 @@ public class JwtTokenService {
        // UserEntity user = userRepository.findByUsername(username);
         JwtTokenInfoEntity jwtTokenInfoEntity = jwtTokenRepository.findByUsername(username);
         jwtTokenRepository.delete(jwtTokenInfoEntity);
+    }
+
+
+    public void updateAccessToken(String username, String accessToken, Long accessTokenTime){
+        JwtTokenInfoEntity jwtTokenInfoEntity = jwtTokenRepository.findByUsername(username);
+        jwtTokenInfoEntity.setAccessToken(accessToken);
+        jwtTokenInfoEntity.setAccessTokenExpIn(accessTokenTime);
+        jwtTokenRepository.save(jwtTokenInfoEntity);
+    }
+
+    public Boolean isAccessTokeExist(String username){
+        Integer jwtTokenInfoEntity = jwtTokenRepository.countJwtTokenInfoEntityByUsername(username);
+        return jwtTokenInfoEntity != 0;
+    }
+
+    public JwtTokenInfoEntity getJwtTokenInfoEntityByUsername(String username){
+        JwtTokenInfoEntity jwtTokenInfoEntity = jwtTokenRepository.findByUsername(username);
+        return jwtTokenInfoEntity;
     }
 
 

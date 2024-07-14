@@ -7,6 +7,7 @@ import com.salahin.springsecurity.repository.JwtTokenRepository;
 import com.salahin.springsecurity.repository.UserRepository;
 import com.salahin.springsecurity.service.JwtTokenService;
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.impl.DefaultClaims;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,35 +30,57 @@ public class JwtTokenUtil {
     @Value("${jwt.secret}")
     private String SECRET;
 
-    //public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
-
     private final long jwtAccessExpirationInMs = 1000 * 60 * 15; // 15 minutes
-    //private final long jwtRefreshExpirationInMs = 1000 * 60 * 60 * 24 * 7; // 7 days
+    //private final long jwtAccessExpirationInMs = 80;
+
+    private final long jwtRefreshExpirationInMs = 1000 * 60 * 60 * 24 * 7; // 7 days
+    //private final long jwtRefreshExpirationInMs = 80; // 7 days
 
     //@Value("${jwt.expirationDateInMs}")
     //private int jwtExpirationInMs;
 
-    @Value("${jwt.refreshExpirationDateInMs}")
-    private int refreshExpirationDateInMs;
+    //@Value("${jwt.refreshExpirationDateInMs}")
+    //private int refreshExpirationDateInMs;
 
     @Autowired
     JwtTokenService jwtTokenService;
 
     // generate token for user
-    public AuthResponse getAccessToken(UserDetails userDetails) {
+    public AuthResponse getAccessToken(String username) {
+        String tokenType = "Bearer";
+        JwtTokenInfoEntity jwtTokenInfoEntity;
+        jwtTokenInfoEntity = jwtTokenService.getJwtTokenInfoEntityByUsername(username);
+        if (jwtTokenInfoEntity == null) {
+            Map<String, Object> claims = new HashMap<>();
+            String accessToken = doGenerateToken(claims, username);
+            long accessTokenTime = convertMillisecondsToMinutes(jwtAccessExpirationInMs);
+            long refreshTokenTime = convertMillisecondsToMinutes(jwtRefreshExpirationInMs);
+
+            String refreshToken = doGenerateRefreshToken(claims, username);
+
+            jwtTokenService.saveTokenInfo(username, accessToken, accessTokenTime, refreshToken, refreshTokenTime, tokenType);
+
+            return AuthResponse.builder()
+                    .access_token(accessToken)
+                    .token_type(tokenType)
+                    .expires_in(accessTokenTime + "M")
+                    .build();
+
+        } else {
+            long accessTokenTime = convertMillisecondsToMinutes(jwtTokenInfoEntity.getAccessTokenExpIn());
+            return AuthResponse.builder()
+                    .access_token(jwtTokenInfoEntity.getAccessToken())
+                    .token_type(tokenType)
+                    .expires_in(accessTokenTime+"M")
+                    .build();
+        }
+
+    }
+
+    public String getRefreshAccessToken(String username) {
         Map<String, Object> claims = new HashMap<>();
-        String accessToken = doGenerateToken(claims, userDetails.getUsername());
-        long minutes = convertMillisecondsToMinutes(jwtAccessExpirationInMs);
-        AuthResponse authResponse = AuthResponse.builder()
-                .access_token(accessToken)
-                .token_type("Bearer")
-                .expires_in(minutes+"M")
-                .build();
-
-
-        jwtTokenService.saveTokenInfo(userDetails.getUsername(),accessToken);
-
-        return authResponse;
+        String refreshedAccessToken = doGenerateToken(claims, username);
+        return refreshedAccessToken;
     }
 
     private String doGenerateToken(Map<String, Object> claims, String subject) {
@@ -66,16 +89,55 @@ public class JwtTokenUtil {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + jwtAccessExpirationInMs))
-                // .signWith(SignatureAlgorithm.HS512, secret).compact();
                 .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
     }
 
     public String doGenerateRefreshToken(Map<String, Object> claims, String subject) {
 
-        return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + refreshExpirationDateInMs))
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtRefreshExpirationInMs))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
 
+    }
+
+  /*  private Claims getAllClaimsFromExpiredToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSignKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }*/
+
+    public Map<String, Object> getAllTokenClaims(String token) {
+        try {
+            Claims claims = getAllClaimsFromToken(token);
+            return new HashMap<>(claims);
+        } catch (ExpiredJwtException ex) {
+            return new HashMap<>(ex.getClaims());
+        }
+    }
+
+    public Claims convertMapToClaims(Map<String, Object> claimsMap) {
+        Claims claims = new DefaultClaims();
+        claims.putAll(claimsMap);
+        return claims;
+    }
+
+    public boolean isTokenExpiredFromClaimsMap(Map<String, Object> claimsMap) {
+        Object expObject = claimsMap.get("exp");
+        long exp = 0;
+
+        if (expObject instanceof Integer) {
+            exp = ((Integer) expObject).longValue();
+        } else if (expObject instanceof Long) {
+            exp = (Long) expObject;
+        }
+
+        Date expiration = new Date(exp * 1000); // JWT stores the exp in seconds, so convert to milliseconds
+        return expiration.before(new Date());
     }
 
     public boolean validateToken(String authToken, UserDetails userDetails) {

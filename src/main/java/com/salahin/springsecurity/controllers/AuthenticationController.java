@@ -6,18 +6,14 @@ import com.salahin.springsecurity.configuration.JwtTokenUtil;
 import com.salahin.springsecurity.model.AuthRequest;
 import com.salahin.springsecurity.model.AuthResponse;
 import com.salahin.springsecurity.service.JwtTokenService;
-import io.jsonwebtoken.impl.DefaultClaims;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
@@ -33,7 +29,8 @@ public class AuthenticationController {
     public AuthenticationController(
             CustomUserDetailsService userDetailsService,
             JwtTokenUtil jwtTokenUtil,
-            CustomAuthenticationManager customAuthenticationManager, JwtTokenService jwtTokenService) {
+            CustomAuthenticationManager customAuthenticationManager,
+            JwtTokenService jwtTokenService) {
 
         this.userDetailsService = userDetailsService;
         this.jwtTokenUtil = jwtTokenUtil;
@@ -54,11 +51,11 @@ public class AuthenticationController {
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
         // Generate jwt token
-        AuthResponse authResponse = jwtTokenUtil.getAccessToken(userDetails);
+        AuthResponse authResponse = jwtTokenUtil.getAccessToken(userDetails.getUsername());
         return ResponseEntity.ok(authResponse);
     }
 
-    @RequestMapping(value = "/refreshtoken", method = RequestMethod.GET)
+   /* @GetMapping(value = "/refreshtoken")
     public ResponseEntity<?> refreshtoken(HttpServletRequest request) throws Exception {
         // From the HttpRequest get the claims
         DefaultClaims claims = (io.jsonwebtoken.impl.DefaultClaims) request.getAttribute("claims");
@@ -77,11 +74,10 @@ public class AuthenticationController {
             expectedMap.put(entry.getKey(), entry.getValue());
         }
         return expectedMap;
-    }
+    }*/
 
     @PostMapping("/signing-out")
     public ResponseEntity<?> logoutUser(@RequestBody AuthRequest authRequest) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         this.jwtTokenService.deleteAccessToken(authRequest.getUsername());
         SecurityContextHolder.clearContext();
         return new ResponseEntity<>("User has been logged out successfully", HttpStatus.OK);

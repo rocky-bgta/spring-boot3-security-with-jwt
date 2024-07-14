@@ -1,9 +1,15 @@
 package com.salahin.springsecurity.configuration;
 
+import com.salahin.springsecurity.entity.JwtTokenInfoEntity;
+import com.salahin.springsecurity.entity.UserEntity;
 import com.salahin.springsecurity.model.AuthResponse;
+import com.salahin.springsecurity.repository.JwtTokenRepository;
+import com.salahin.springsecurity.repository.UserRepository;
+import com.salahin.springsecurity.service.JwtTokenService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -34,6 +40,9 @@ public class JwtTokenUtil {
     @Value("${jwt.refreshExpirationDateInMs}")
     private int refreshExpirationDateInMs;
 
+    @Autowired
+    JwtTokenService jwtTokenService;
+
     // generate token for user
     public AuthResponse getAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
@@ -44,6 +53,9 @@ public class JwtTokenUtil {
                 .token_type("Bearer")
                 .expires_in(minutes+"M")
                 .build();
+
+
+        jwtTokenService.saveTokenInfo(userDetails.getUsername(),accessToken);
 
         return authResponse;
     }

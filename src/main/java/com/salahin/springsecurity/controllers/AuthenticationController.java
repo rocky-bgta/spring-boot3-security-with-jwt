@@ -5,11 +5,14 @@ import com.salahin.springsecurity.configuration.CustomUserDetailsService;
 import com.salahin.springsecurity.configuration.JwtTokenUtil;
 import com.salahin.springsecurity.model.AuthRequest;
 import com.salahin.springsecurity.model.AuthResponse;
+import com.salahin.springsecurity.service.JwtTokenService;
 import io.jsonwebtoken.impl.DefaultClaims;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,15 +26,19 @@ public class AuthenticationController {
     private final CustomUserDetailsService userDetailsService;
     private final JwtTokenUtil jwtTokenUtil;
     private final CustomAuthenticationManager customAuthenticationManager;
+    private final JwtTokenService jwtTokenService;
+
+
 
     public AuthenticationController(
             CustomUserDetailsService userDetailsService,
             JwtTokenUtil jwtTokenUtil,
-            CustomAuthenticationManager customAuthenticationManager) {
+            CustomAuthenticationManager customAuthenticationManager, JwtTokenService jwtTokenService) {
 
         this.userDetailsService = userDetailsService;
         this.jwtTokenUtil = jwtTokenUtil;
         this.customAuthenticationManager = customAuthenticationManager;
+        this.jwtTokenService = jwtTokenService;
     }
 
     @PostMapping(value = "/authenticate")
@@ -46,6 +53,7 @@ public class AuthenticationController {
                 );
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
+        // Generate jwt token
         AuthResponse authResponse = jwtTokenUtil.getAccessToken(userDetails);
         return ResponseEntity.ok(authResponse);
     }
@@ -69,6 +77,14 @@ public class AuthenticationController {
             expectedMap.put(entry.getKey(), entry.getValue());
         }
         return expectedMap;
+    }
+
+    @PostMapping("/signing-out")
+    public ResponseEntity<?> logoutUser(@RequestBody AuthRequest authRequest) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        this.jwtTokenService.deleteAccessToken(authRequest.getUsername());
+        SecurityContextHolder.clearContext();
+        return new ResponseEntity<>("User has been logged out successfully", HttpStatus.OK);
     }
 
 }

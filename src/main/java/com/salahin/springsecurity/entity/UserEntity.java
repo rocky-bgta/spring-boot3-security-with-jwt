@@ -23,6 +23,9 @@ public class UserEntity {
 	
 	@Column(name="username", nullable = false)
 	private String username;
+
+	@Column(name = "user_id")
+	private String userId;
 	
 	@Column(name="password", nullable = false)
 	@JsonIgnore

@@ -5,17 +5,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigInteger;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class SlackJwtTokenUtil {
+
+    @Value("${jwt.secret}")
+    private String SECRET;
+
+    private final long jwtAccessExpirationInMs = 1000 * 60 * 15; // 15 minutes
 
     private static final String SLACK_JWKS_URL = "https://slack.com/openid/connect/keys";
     private final Map<String, PublicKey> publicKeys = new HashMap<>();
@@ -74,6 +86,18 @@ public class SlackJwtTokenUtil {
 
     }*/
 
+    public String generateToken(String username, List<SimpleGrantedAuthority> authorities) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", authorities.stream().map(SimpleGrantedAuthority::getAuthority).collect(Collectors.toList()));
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtAccessExpirationInMs))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
+    }
+
     private String getKidFromToken(String token) {
         String[] parts = token.split("\\.");
         if (parts.length < 2) {
@@ -101,6 +125,11 @@ public class SlackJwtTokenUtil {
     public Map<String, Object> getAllClaimsAsMap(String token) {
         Claims claims = getAllClaimsFromToken(token);
         return new HashMap<>(claims);
+    }
+
+    private Key getSignKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
 }

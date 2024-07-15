@@ -1,18 +1,13 @@
-package com.salahin.springsecurity.configuration;
+package com.salahin.springsecurity.service;
 
 import com.salahin.springsecurity.entity.JwtTokenInfoEntity;
-import com.salahin.springsecurity.entity.UserEntity;
 import com.salahin.springsecurity.model.AuthResponse;
-import com.salahin.springsecurity.repository.JwtTokenRepository;
-import com.salahin.springsecurity.repository.UserRepository;
-import com.salahin.springsecurity.service.JwtTokenService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.impl.DefaultClaims;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Example;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -25,7 +20,7 @@ import java.util.function.Function;
 
 
 @Service
-public class JwtTokenUtil {
+public class JwtTokenUtilService {
 
     @Value("${jwt.secret}")
     private String SECRET;
@@ -43,13 +38,13 @@ public class JwtTokenUtil {
     //private int refreshExpirationDateInMs;
 
     @Autowired
-    JwtTokenService jwtTokenService;
+    JwtTokenInfoService jwtTokenInfoService;
 
     // generate token for user
     public AuthResponse getAccessToken(String username) {
         String tokenType = "Bearer";
         JwtTokenInfoEntity jwtTokenInfoEntity;
-        jwtTokenInfoEntity = jwtTokenService.getJwtTokenInfoEntityByUsername(username);
+        jwtTokenInfoEntity = jwtTokenInfoService.getJwtTokenInfoEntityByUsername(username);
         if (jwtTokenInfoEntity == null) {
             Map<String, Object> claims = new HashMap<>();
             String accessToken = doGenerateToken(claims, username);
@@ -58,7 +53,7 @@ public class JwtTokenUtil {
 
             String refreshToken = doGenerateRefreshToken(claims, username);
 
-            jwtTokenService.saveTokenInfo(username, accessToken, accessTokenTime, refreshToken, refreshTokenTime, tokenType);
+            jwtTokenInfoService.saveTokenInfo(username, accessToken, accessTokenTime, refreshToken, refreshTokenTime, tokenType);
 
             return AuthResponse.builder()
                     .access_token(accessToken)

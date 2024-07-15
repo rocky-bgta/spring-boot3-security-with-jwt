@@ -2,7 +2,6 @@ package com.salahin.springsecurity.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.salahin.springsecurity.configuration.JwtTokenUtil;
 import com.salahin.springsecurity.configuration.SlackJwtTokenUtil;
 import com.salahin.springsecurity.service.SlackTokenService;
 import io.jsonwebtoken.io.IOException;
@@ -22,7 +21,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Controller

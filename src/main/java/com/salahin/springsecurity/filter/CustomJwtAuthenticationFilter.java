@@ -1,8 +1,10 @@
-package com.salahin.springsecurity.configuration;
+package com.salahin.springsecurity.filter;
 
+import com.salahin.springsecurity.configuration.CustomUserDetailsService;
+import com.salahin.springsecurity.service.JwtTokenUtilService;
 import com.salahin.springsecurity.entity.JwtTokenInfoEntity;
 import com.salahin.springsecurity.repository.JwtTokenRepository;
-import com.salahin.springsecurity.service.JwtTokenService;
+import com.salahin.springsecurity.service.JwtTokenInfoService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Header;
@@ -25,17 +27,17 @@ import java.util.Map;
 @Component
 public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenUtil jwtTokenUtil;
+    private final JwtTokenUtilService jwtTokenUtilService;
     private final CustomUserDetailsService customUserDetailsService;
 
     @Autowired
     JwtTokenRepository jwtTokenRepository;
 
     @Autowired
-    JwtTokenService jwtTokenService;
+    JwtTokenInfoService jwtTokenInfoService;
 
-    public CustomJwtAuthenticationFilter(JwtTokenUtil jwtTokenUtil, CustomUserDetailsService customUserDetailsService) {
-        this.jwtTokenUtil = jwtTokenUtil;
+    public CustomJwtAuthenticationFilter(JwtTokenUtilService jwtTokenUtilService, CustomUserDetailsService customUserDetailsService) {
+        this.jwtTokenUtilService = jwtTokenUtilService;
         this.customUserDetailsService = customUserDetailsService;
     }
 
@@ -55,9 +57,9 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
                 jwtAccessToken = requestTokenHeader.substring(7);
 
-                Map<String, Object> claimsMap = jwtTokenUtil.getAllTokenClaims(jwtAccessToken);
+                Map<String, Object> claimsMap = jwtTokenUtilService.getAllTokenClaims(jwtAccessToken);
 
-                isAccessTokenExpired = jwtTokenUtil.isTokenExpiredFromClaimsMap(claimsMap);
+                isAccessTokenExpired = jwtTokenUtilService.isTokenExpiredFromClaimsMap(claimsMap);
 
                 username = claimsMap.get("sub").toString();
 
@@ -78,7 +80,7 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
                     // if token is valid configure Spring Security to manually set
                     // authentication
-                    if (jwtTokenUtil.validateToken(jwtAccessToken, userDetails)) {
+                    if (jwtTokenUtilService.validateToken(jwtAccessToken, userDetails)) {
 
                         setSecurityContext(new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities()), request);
@@ -91,35 +93,35 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
                 /* retrieved refreshed token for DB */
                 JwtTokenInfoEntity jwtTokenInfoEntity = jwtTokenRepository.findByUsername(username);
-                if(jwtTokenInfoEntity != null) {
+                if(jwtTokenInfoEntity == null) {
                    throw new IllegalArgumentException("Invalid JWT token");
                 }
 
                 String refreshedToken = jwtTokenInfoEntity.getRefreshedToken();
 
-                Map<String, Object> claimsMap = jwtTokenUtil.getAllTokenClaims(refreshedToken);
-                isRefreshTokenExpired = jwtTokenUtil.isTokenExpiredFromClaimsMap(claimsMap);
+                Map<String, Object> claimsMap = jwtTokenUtilService.getAllTokenClaims(refreshedToken);
+                isRefreshTokenExpired = jwtTokenUtilService.isTokenExpiredFromClaimsMap(claimsMap);
 
 
                 // if refreshed token is not expired
                 if (!isRefreshTokenExpired) {
                     UserDetails userDetails = this.customUserDetailsService.loadUserByUsername(username);
-                    String newAccessToken = jwtTokenUtil.getRefreshAccessToken(username);
+                    String newAccessToken = jwtTokenUtilService.getRefreshAccessToken(username);
 
-                    Object expObject = jwtTokenUtil.getAllTokenClaims(newAccessToken).get("exp");
+                    Object expObject = jwtTokenUtilService.getAllTokenClaims(newAccessToken).get("exp");
                     long accessTokenTime = ((Integer) expObject).longValue();
 
-                    accessTokenTime = JwtTokenUtil.convertMillisecondsToMinutes(accessTokenTime);
-                    jwtTokenService.updateAccessToken(username, newAccessToken, accessTokenTime);
+                    accessTokenTime = JwtTokenUtilService.convertMillisecondsToMinutes(accessTokenTime);
+                    jwtTokenInfoService.updateAccessToken(username, newAccessToken, accessTokenTime);
                     setSecurityContext(new UsernamePasswordAuthenticationToken(
                             username, null, userDetails.getAuthorities()), request);
                 } else {
                     // Delete token row if refreshed token expired that is user needed re-login to application.
-                    jwtTokenService.deleteAccessToken(username);
+                    jwtTokenInfoService.deleteAccessToken(username);
 
                     // Throw ExpiredJwtException
                     Header header = new DefaultHeader();
-                    Claims claims = jwtTokenUtil.convertMapToClaims(claimsMap);
+                    Claims claims = jwtTokenUtilService.convertMapToClaims(claimsMap);
                     throw new ExpiredJwtException(header, claims, "Token has expired");
                 }
             }

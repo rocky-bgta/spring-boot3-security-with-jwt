@@ -1,5 +1,7 @@
 package com.salahin.springsecurity.configuration;
 
+import com.salahin.springsecurity.filter.CustomJwtAuthenticationFilter;
+import com.salahin.springsecurity.filter.JwtAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

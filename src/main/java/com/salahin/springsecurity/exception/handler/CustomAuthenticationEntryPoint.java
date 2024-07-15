@@ -1,6 +1,5 @@
-package com.salahin.springsecurity.filter;
+package com.salahin.springsecurity.exception.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -12,17 +11,16 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 
 @Component
-public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
 			throws IOException {
 
 		//String path = request.getRequestURI();
-		response.setHeader("response-soft", "Authentication Failed");
+		response.setHeader("response-soft-error-reason", "Authentication Failed");
 
 		// Set the response status to 401 (Unauthorized)
 		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

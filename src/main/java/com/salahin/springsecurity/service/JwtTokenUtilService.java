@@ -25,7 +25,7 @@ public class JwtTokenUtilService {
     @Value("${jwt.secret}")
     private String SECRET;
 
-    private final long jwtAccessExpirationInMs = 1000 * 60 * 15; // 15 minutes
+    private final long jwtAccessExpirationInMs = 1000 * 60 * 60; // 60 minutes
     //private final long jwtAccessExpirationInMs = 80;
 
     private final long jwtRefreshExpirationInMs = 1000 * 60 * 60 * 24 * 7; // 7 days
@@ -49,11 +49,11 @@ public class JwtTokenUtilService {
             Map<String, Object> claims = new HashMap<>();
             String accessToken = doGenerateToken(claims, username);
             long accessTokenTime = convertMillisecondsToMinutes(jwtAccessExpirationInMs);
-            long refreshTokenTime = convertMillisecondsToMinutes(jwtRefreshExpirationInMs);
+            //long refreshTokenTime = jwtRefreshExpirationInMs;
 
             String refreshToken = doGenerateRefreshToken(claims, username);
 
-            jwtTokenInfoService.saveTokenInfo(username, accessToken, accessTokenTime, refreshToken, refreshTokenTime, tokenType);
+            jwtTokenInfoService.saveTokenInfo(username, accessToken, jwtAccessExpirationInMs, refreshToken, jwtRefreshExpirationInMs, tokenType);
 
             return AuthResponse.builder()
                     .access_token(accessToken)

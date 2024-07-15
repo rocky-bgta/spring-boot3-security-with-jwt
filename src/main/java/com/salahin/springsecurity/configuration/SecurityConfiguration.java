@@ -1,7 +1,8 @@
 package com.salahin.springsecurity.configuration;
 
+import com.salahin.springsecurity.exception.handler.CustomAccessDeniedHandler;
+import com.salahin.springsecurity.exception.handler.CustomAuthenticationEntryPoint;
 import com.salahin.springsecurity.filter.CustomJwtAuthenticationFilter;
-import com.salahin.springsecurity.filter.JwtAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,66 +21,71 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfiguration{
-	
-	private final CustomUserDetailsService customUserDetailsService;
-	private final CustomJwtAuthenticationFilter customJwtAuthenticationFilter;
-	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-	
-	public SecurityConfiguration(
-		CustomUserDetailsService customUserDetailsService, CustomJwtAuthenticationFilter customJwtAuthenticationFilter,
-		JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
-		this.customUserDetailsService = customUserDetailsService;
-		this.customJwtAuthenticationFilter = customJwtAuthenticationFilter;
-		this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
-	}
-	
-	@Bean
-	public PasswordEncoder passwordEncoder(){
-		return new BCryptPasswordEncoder();
-	}
+public class SecurityConfiguration {
+
+    private final CustomUserDetailsService customUserDetailsService;
+    private final CustomJwtAuthenticationFilter customJwtAuthenticationFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+
+    public SecurityConfiguration(
+            CustomUserDetailsService customUserDetailsService, CustomJwtAuthenticationFilter customJwtAuthenticationFilter,
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint, CustomAccessDeniedHandler customAccessDeniedHandler) {
+        this.customUserDetailsService = customUserDetailsService;
+        this.customJwtAuthenticationFilter = customJwtAuthenticationFilter;
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+        this.customAccessDeniedHandler = customAccessDeniedHandler;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 	
 	/*@Override
 	public void configure(AuthenticationManagerBuilder auth) throws Exception{
 		auth.userDetailsService(customUserDetailsService).passwordEncoder(passwordEncoder());
 	}*/
 
-	@Bean
-	AuthenticationProvider authenticationProvider() {
-		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-		authProvider.setUserDetailsService(customUserDetailsService);
-		authProvider.setPasswordEncoder(passwordEncoder());
-		return authProvider;
-	}
+    @Bean
+    AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(customUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
 
 
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
-				.csrf(AbstractHttpConfigurer::disable)
-				.formLogin(AbstractHttpConfigurer::disable)
-				.httpBasic(AbstractHttpConfigurer::disable)
-				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers(new AntPathRequestMatcher("/admin-user")).hasRole("ADMIN")
-						.requestMatchers(new AntPathRequestMatcher("/normal-user")).hasAnyRole("ADMIN", "USER")
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(new AntPathRequestMatcher("/admin-user")).hasRole("ADMIN")
+                        .requestMatchers(new AntPathRequestMatcher("/normal-user")).hasAnyRole("ADMIN", "USER")
 
-						.requestMatchers(
-								new AntPathRequestMatcher("/authenticate"),
-								new AntPathRequestMatcher("/register"),
-								new AntPathRequestMatcher("/signing-out"),
-								new AntPathRequestMatcher("/slack/**")).permitAll()
-						.anyRequest().authenticated()
-				)
-				.exceptionHandling(exceptionHandling ->
-						exceptionHandling.authenticationEntryPoint(jwtAuthenticationEntryPoint)
-				)
-				.sessionManagement(sessionManagement ->
-						sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-				)
-				.addFilterBefore(customJwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/authenticate"),
+                                new AntPathRequestMatcher("/register"),
+                                new AntPathRequestMatcher("/signing-out"),
+                                new AntPathRequestMatcher("/slack/**")).permitAll()
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling()
+                // it is an Global auth exception handler
+                    .authenticationEntryPoint(customAuthenticationEntryPoint)
+                    .accessDeniedHandler(customAccessDeniedHandler)
+                .and()
 
-		return http.build();
-	}
+                .sessionManagement(sessionManagement ->
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .addFilterBefore(customJwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
 
 /*	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
@@ -122,9 +128,9 @@ public class SecurityConfiguration{
 		return super.authenticationManagerBean();
 	}*/
 
-	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-			throws Exception {
-		return authenticationConfiguration.getAuthenticationManager();
-	}
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 }

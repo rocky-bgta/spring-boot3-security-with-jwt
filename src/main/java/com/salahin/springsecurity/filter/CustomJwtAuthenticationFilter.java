@@ -1,10 +1,10 @@
 package com.salahin.springsecurity.filter;
 
 import com.salahin.springsecurity.configuration.CustomUserDetailsService;
-import com.salahin.springsecurity.service.JwtTokenUtilService;
 import com.salahin.springsecurity.entity.JwtTokenInfoEntity;
 import com.salahin.springsecurity.repository.JwtTokenRepository;
 import com.salahin.springsecurity.service.JwtTokenInfoService;
+import com.salahin.springsecurity.service.JwtTokenUtilService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Header;
@@ -111,7 +111,7 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                     Object expObject = jwtTokenUtilService.getAllTokenClaims(newAccessToken).get("exp");
                     long accessTokenTime = ((Integer) expObject).longValue();
 
-                    accessTokenTime = JwtTokenUtilService.convertMillisecondsToMinutes(accessTokenTime);
+                    //accessTokenTime = JwtTokenUtilService.convertMillisecondsToMinutes(accessTokenTime);
                     jwtTokenInfoService.updateAccessToken(username, newAccessToken, accessTokenTime);
                     setSecurityContext(new UsernamePasswordAuthenticationToken(
                             username, null, userDetails.getAuthorities()), request);

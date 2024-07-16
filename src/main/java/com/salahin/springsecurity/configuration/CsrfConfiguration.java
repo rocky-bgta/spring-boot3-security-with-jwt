@@ -13,7 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-//@Configuration
+@Configuration
 public class CsrfConfiguration {
 
     @Bean

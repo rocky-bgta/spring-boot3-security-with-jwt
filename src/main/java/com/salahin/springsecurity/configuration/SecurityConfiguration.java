@@ -2,7 +2,6 @@ package com.salahin.springsecurity.configuration;
 
 import com.salahin.springsecurity.exception.handler.CustomAccessDeniedHandler;
 import com.salahin.springsecurity.exception.handler.CustomAuthenticationEntryPoint;
-import com.salahin.springsecurity.filter.CsrfCookieFilter;
 import com.salahin.springsecurity.filter.CustomJwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,11 +17,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -33,18 +30,24 @@ public class SecurityConfiguration {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomCorsConfiguration customCorsConfiguration;
+    private final OncePerRequestFilter csrfHeaderFilter;
+    private final CsrfTokenRepository csrfTokenRepository;
 
     public SecurityConfiguration(
             CustomUserDetailsService customUserDetailsService,
             CustomJwtAuthenticationFilter customJwtAuthenticationFilter,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
             CustomAccessDeniedHandler customAccessDeniedHandler,
-            CustomCorsConfiguration customCorsConfiguration) {
+            CustomCorsConfiguration customCorsConfiguration,
+            OncePerRequestFilter csrfHeaderFilter,
+            CsrfTokenRepository csrfTokenRepository) {
         this.customUserDetailsService = customUserDetailsService;
         this.customJwtAuthenticationFilter = customJwtAuthenticationFilter;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.customCorsConfiguration = customCorsConfiguration;
+        this.csrfHeaderFilter = csrfHeaderFilter;
+        this.csrfTokenRepository = csrfTokenRepository;
     }
 
     @Bean
@@ -68,22 +71,22 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        CsrfTokenRequestHandler csrfTokenRequestHandler = new CsrfTokenRequestAttributeHandler();
-
         http
-                .csrf(csrfConfig -> csrfConfig
-                        .csrfTokenRequestHandler(csrfTokenRequestHandler)
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
-                .addFilterAfter(new CsrfCookieFilter(), UsernamePasswordAuthenticationFilter.class)
-
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .ignoringRequestMatchers(
+                                new AntPathRequestMatcher("/authenticate"),
+                                new AntPathRequestMatcher("/register"),
+                                new AntPathRequestMatcher("/signing-out"),
+                                new AntPathRequestMatcher("/slack/**")
+                        ))
+                .addFilterAfter(csrfHeaderFilter, UsernamePasswordAuthenticationFilter.class)
                 .cors(corsConfig -> corsConfig.configurationSource(customCorsConfiguration))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(new AntPathRequestMatcher("/admin-user")).hasRole("ADMIN")
                         .requestMatchers(new AntPathRequestMatcher("/normal-user")).hasAnyRole("ADMIN", "USER")
-
                         .requestMatchers(
                                 new AntPathRequestMatcher("/authenticate"),
                                 new AntPathRequestMatcher("/register"),
@@ -96,7 +99,6 @@ public class SecurityConfiguration {
                 .authenticationEntryPoint(customAuthenticationEntryPoint)
                 .accessDeniedHandler(customAccessDeniedHandler)
                 .and()
-
                 .sessionManagement(sessionManagement ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

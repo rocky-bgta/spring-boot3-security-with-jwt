@@ -1,3 +1,4 @@
+/*
 package com.salahin.springsecurity.filter;
 
 import jakarta.servlet.FilterChain;
@@ -22,3 +23,4 @@ public class CsrfCookieFilter extends OncePerRequestFilter {
     }
 
 }
+*/

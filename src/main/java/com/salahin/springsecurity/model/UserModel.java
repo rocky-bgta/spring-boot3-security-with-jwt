@@ -1,5 +1,6 @@
 package com.salahin.springsecurity.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salahin.springsecurity.entity.RoleEntity;
 import lombok.Data;
 
@@ -10,6 +11,8 @@ import java.util.UUID;
 public class UserModel {
 	private UUID id;
 	private String username;
+
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private String password;
 	private List<RoleEntity> roleList;
 }

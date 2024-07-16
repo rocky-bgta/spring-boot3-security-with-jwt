@@ -30,8 +30,11 @@ public class SecurityConfiguration {
     private final CustomCorsConfiguration customCorsConfiguration;
 
     public SecurityConfiguration(
-            CustomUserDetailsService customUserDetailsService, CustomJwtAuthenticationFilter customJwtAuthenticationFilter,
-            CustomAuthenticationEntryPoint customAuthenticationEntryPoint, CustomAccessDeniedHandler customAccessDeniedHandler, CustomCorsConfiguration customCorsConfiguration) {
+            CustomUserDetailsService customUserDetailsService,
+            CustomJwtAuthenticationFilter customJwtAuthenticationFilter,
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+            CustomAccessDeniedHandler customAccessDeniedHandler,
+            CustomCorsConfiguration customCorsConfiguration) {
         this.customUserDetailsService = customUserDetailsService;
         this.customJwtAuthenticationFilter = customJwtAuthenticationFilter;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;

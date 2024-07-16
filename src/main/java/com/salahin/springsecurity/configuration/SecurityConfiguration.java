@@ -27,14 +27,16 @@ public class SecurityConfiguration {
     private final CustomJwtAuthenticationFilter customJwtAuthenticationFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomCorsConfiguration customCorsConfiguration;
 
     public SecurityConfiguration(
             CustomUserDetailsService customUserDetailsService, CustomJwtAuthenticationFilter customJwtAuthenticationFilter,
-            CustomAuthenticationEntryPoint customAuthenticationEntryPoint, CustomAccessDeniedHandler customAccessDeniedHandler) {
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint, CustomAccessDeniedHandler customAccessDeniedHandler, CustomCorsConfiguration customCorsConfiguration) {
         this.customUserDetailsService = customUserDetailsService;
         this.customJwtAuthenticationFilter = customJwtAuthenticationFilter;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
+        this.customCorsConfiguration = customCorsConfiguration;
     }
 
     @Bean
@@ -60,6 +62,7 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(corsConfig -> corsConfig.configurationSource(customCorsConfiguration))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
@@ -75,8 +78,8 @@ public class SecurityConfiguration {
                 )
                 .exceptionHandling()
                 // it is an Global auth exception handler
-                    .authenticationEntryPoint(customAuthenticationEntryPoint)
-                    .accessDeniedHandler(customAccessDeniedHandler)
+                .authenticationEntryPoint(customAuthenticationEntryPoint)
+                .accessDeniedHandler(customAccessDeniedHandler)
                 .and()
 
                 .sessionManagement(sessionManagement ->

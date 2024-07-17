@@ -41,6 +41,8 @@ public class SlackController {
     private final SlackJwtTokenUtil slackJwtTokenUtil;
     private final SlackTokenService slackTokenService;
 
+    private static ThreadLocal<String> threadLocalState = new ThreadLocal<>();
+
     public SlackController(SlackJwtTokenUtil slackJwtTokenUtil, SlackTokenService slackTokenService) {
         this.slackJwtTokenUtil = slackJwtTokenUtil;
         this.slackTokenService = slackTokenService;
@@ -51,6 +53,8 @@ public class SlackController {
         String redirectUri = ngrokEndPoint + slackRedirectUri;
         String state = generateRandomString();
         String nonce = generateRandomString();
+
+        threadLocalState.set(state);
 
         session.setAttribute("oauth_state", state);
         session.setAttribute("oauth_nonce", nonce);
@@ -71,6 +75,8 @@ public class SlackController {
     public String slackCallback(@RequestParam("code") String code, @RequestParam("state") String state, HttpSession session) {
         String redirectUri = ngrokEndPoint + slackRedirectUri;
         String tokenUrl = "https://slack.com/api/openid.connect.token";
+
+        // TODO check the threadLocalState value with method parameter state value
 
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(tokenUrl)
                 .queryParam("client_id", clientId)

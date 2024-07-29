@@ -2,7 +2,10 @@ package com.salahin.springsecurity.filter;
 
 import com.salahin.springsecurity.configuration.CustomUserDetailsService;
 import com.salahin.springsecurity.entity.JwtTokenInfoEntity;
+import com.salahin.springsecurity.entity.RoleEntity;
+import com.salahin.springsecurity.entity.UserEntity;
 import com.salahin.springsecurity.repository.JwtTokenRepository;
+import com.salahin.springsecurity.repository.UserRepository;
 import com.salahin.springsecurity.service.JwtTokenInfoService;
 import com.salahin.springsecurity.service.JwtTokenUtilService;
 import io.jsonwebtoken.Claims;
@@ -15,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -22,13 +26,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Component
 public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenUtilService jwtTokenUtilService;
     private final CustomUserDetailsService customUserDetailsService;
+    private final UserRepository userRepository;
 
     @Autowired
     JwtTokenRepository jwtTokenRepository;
@@ -36,14 +44,15 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     JwtTokenInfoService jwtTokenInfoService;
 
-    public CustomJwtAuthenticationFilter(JwtTokenUtilService jwtTokenUtilService, CustomUserDetailsService customUserDetailsService) {
+    public CustomJwtAuthenticationFilter(JwtTokenUtilService jwtTokenUtilService, CustomUserDetailsService customUserDetailsService, UserRepository userRepository) {
         this.jwtTokenUtilService = jwtTokenUtilService;
         this.customUserDetailsService = customUserDetailsService;
+        this.userRepository = userRepository;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-       return request.getServletPath().equals("/register");
+        return request.getServletPath().equals("/register");
     }
 
     @Override
@@ -63,10 +72,20 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 jwtAccessToken = requestTokenHeader.substring(7);
 
                 Map<String, Object> claimsMap = jwtTokenUtilService.getAllTokenClaims(jwtAccessToken);
+                List<String> rolesFromClaims = jwtTokenUtilService.getRolesFromClaims(claimsMap);
 
                 isAccessTokenExpired = jwtTokenUtilService.isTokenExpiredFromClaimsMap(claimsMap);
 
                 username = claimsMap.get("sub").toString();
+
+                UserEntity userEntity;
+                userEntity = userRepository.findByUsername(username);
+                List<RoleEntity> roles = userEntity.getRoleList();
+                List<String> roleFromDB = roles.stream().map(r -> r.getRoleName()).toList();
+
+                if(new HashSet<>(rolesFromClaims).containsAll(roleFromDB) && new HashSet<>(roleFromDB).containsAll(rolesFromClaims)){
+                    System.out.printf("working");
+                }
 
             }
             /* else {
@@ -99,7 +118,7 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 /* retrieved refreshed token for DB */
                 JwtTokenInfoEntity jwtTokenInfoEntity = jwtTokenRepository.findByUsername(username);
                 if(jwtTokenInfoEntity == null) {
-                   throw new IllegalArgumentException("Invalid JWT token");
+                    throw new IllegalArgumentException("Invalid JWT token");
                 }
 
                 String refreshedToken = jwtTokenInfoEntity.getRefreshedToken();
@@ -139,22 +158,6 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
         chain.doFilter(request, response);
 
-
-        //===
-   /* } catch (ExpiredJwtException ex) {
-        String isRefreshToken = request.getHeader("isRefreshToken");
-        String requestURL = request.getRequestURL().toString();
-        // allow for Refresh Token creation if following conditions are true.
-        if (isRefreshToken != null && isRefreshToken.equals("true") && requestURL.contains("refreshtoken")) {
-            allowForRefreshToken(ex, request);
-        } else
-            request.setAttribute("exception", ex);
-    } catch (BadCredentialsException ex) {
-        request.setAttribute("exception", ex);
-
-        chain.doFilter(request, response);*/
-        //===
-
     }
 
     private static void setSecurityContext(UsernamePasswordAuthenticationToken userDetails, HttpServletRequest request) {
@@ -166,24 +169,5 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
         // Spring Security Configurations successfully.
         SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
     }
-
-   /*
-
-   private void allowForRefreshToken(ExpiredJwtException ex, HttpServletRequest request) {
-
-        // create a UsernamePasswordAuthenticationToken with null values.
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                null, null, null);
-        // After setting the Authentication in the context, we specify
-        // that the current user is authenticated. So it passes the
-        // Spring Security Configurations successfully.
-        SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-        // Set the claims so that in controller we will be using it to create
-        // new JWT
-        request.setAttribute("claims", ex.getClaims());
-
-    }
-
-    */
 
 }

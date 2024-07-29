@@ -9,13 +9,12 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 
@@ -41,17 +40,18 @@ public class JwtTokenUtilService {
     JwtTokenInfoService jwtTokenInfoService;
 
     // generate token for user
-    public AuthResponse getAccessToken(String username) {
+    public AuthResponse getAccessToken(String username, Collection<? extends GrantedAuthority> roles) {
         String tokenType = "Bearer";
         JwtTokenInfoEntity jwtTokenInfoEntity;
         jwtTokenInfoEntity = jwtTokenInfoService.getJwtTokenInfoEntityByUsername(username);
         if (jwtTokenInfoEntity == null) {
             Map<String, Object> claims = new HashMap<>();
+            claims.put("roles", roles);
             String accessToken = doGenerateToken(claims, username);
             long accessTokenTime = convertMillisecondsToMinutes(jwtAccessExpirationInMs);
             //long refreshTokenTime = jwtRefreshExpirationInMs;
 
-            String refreshToken = doGenerateRefreshToken(claims, username);
+            String refreshToken = doGenerateRefreshToken(claims, username, roles);
 
             jwtTokenInfoService.saveTokenInfo(username, accessToken, jwtAccessExpirationInMs, refreshToken, jwtRefreshExpirationInMs, tokenType);
 
@@ -66,7 +66,7 @@ public class JwtTokenUtilService {
             return AuthResponse.builder()
                     .access_token(jwtTokenInfoEntity.getAccessToken())
                     .token_type(tokenType)
-                    .expires_in(accessTokenTime+"M")
+                    .expires_in(accessTokenTime + "M")
                     .build();
         }
 
@@ -87,8 +87,9 @@ public class JwtTokenUtilService {
                 .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
     }
 
-    public String doGenerateRefreshToken(Map<String, Object> claims, String subject) {
-
+    public String doGenerateRefreshToken(Map<String, Object> claims, String subject, Collection<? extends GrantedAuthority> roles) {
+        // Add roles to the claims map
+        claims.put("roles", roles);
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
@@ -113,6 +114,31 @@ public class JwtTokenUtilService {
         } catch (ExpiredJwtException ex) {
             return new HashMap<>(ex.getClaims());
         }
+    }
+
+    public List<String> getRolesFromClaims(Map<String, Object> claims) {
+        List<String> roles = new ArrayList<>();
+        // Assuming the roles are stored as a List<Map<String, Object>> in the claims
+        Object rolesObj = claims.get("roles");
+
+        try {
+            if (rolesObj instanceof List) {
+                List<?> rolesList = (List<?>) rolesObj;
+
+                for (Object roleObj : rolesList) {
+                    if (roleObj instanceof Map) {
+                        Map<?, ?> roleMap = (Map<?, ?>) roleObj;
+                        // Assuming the role name is stored under the "role" key
+                        String roleName = (String) roleMap.get("authority");
+                        roles.add(roleName);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error extracting roles from claims", e);
+        }
+
+        return roles;
     }
 
     public Claims convertMapToClaims(Map<String, Object> claimsMap) {

@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -56,11 +57,11 @@ public class AuthenticationController {
 
         Collection<? extends GrantedAuthority> authorities = authenticate.getAuthorities();
         Object credentials = authenticate.getCredentials();
-        Object principal = authenticate.getPrincipal();
+        User user = (User) authenticate.getPrincipal();
 
         //final UserDetails userDetails = userDetailsService.loadUserByUsername(credentials.toString());
         // Generate jwt token
-        AuthResponse authResponse = jwtTokenUtilService.getAccessToken(credentials.toString(), authorities);
+        AuthResponse authResponse = jwtTokenUtilService.getAccessToken(user.getUsername(), authorities);
         return ResponseEntity.ok(authResponse);
     }
 

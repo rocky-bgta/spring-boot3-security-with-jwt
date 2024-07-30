@@ -23,7 +23,7 @@ import java.util.Collection;
 @RestController
 public class AuthenticationController {
 
-    private final CustomUserDetailsService userDetailsService;
+    private final CustomUserDetailsService customUserDetailsService;
     private final JwtTokenUtilService jwtTokenUtilService;
     private final CustomAuthenticationManager customAuthenticationManager;
     private final JwtTokenInfoService jwtTokenInfoService;
@@ -31,12 +31,12 @@ public class AuthenticationController {
 
 
     public AuthenticationController(
-            CustomUserDetailsService userDetailsService,
+            CustomUserDetailsService customUserDetailsService,
             JwtTokenUtilService jwtTokenUtilService,
             CustomAuthenticationManager customAuthenticationManager,
             JwtTokenInfoService jwtTokenInfoService) {
 
-        this.userDetailsService = userDetailsService;
+        this.customUserDetailsService = customUserDetailsService;
         this.jwtTokenUtilService = jwtTokenUtilService;
         this.customAuthenticationManager = customAuthenticationManager;
         this.jwtTokenInfoService = jwtTokenInfoService;

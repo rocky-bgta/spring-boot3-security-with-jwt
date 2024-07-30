@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class CustomAuthenticationManager implements AuthenticationManager {
 
     @Autowired
-    private UserDetailsService userDetailsService;
+    private CustomUserDetailsService customUserDetailsService; ;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -23,7 +23,7 @@ public class CustomAuthenticationManager implements AuthenticationManager {
         String username = authentication.getName();
         String password = (String) authentication.getCredentials();
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
         // Add your custom authentication logic here
         if (userDetails == null) {

@@ -72,10 +72,10 @@ public class JwtTokenUtilService {
 
     }
 
-    public String getRefreshAccessToken(String username) {
+    public String getRenewAccessToken(String username) {
         Map<String, Object> claims = new HashMap<>();
-        String refreshedAccessToken = doGenerateToken(claims, username);
-        return refreshedAccessToken;
+        String renewAccessToken = doGenerateToken(claims, username);
+        return renewAccessToken;
     }
 
     private String doGenerateToken(Map<String, Object> claims, String subject) {
@@ -99,13 +99,6 @@ public class JwtTokenUtilService {
 
     }
 
-  /*  private Claims getAllClaimsFromExpiredToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }*/
 
     public Map<String, Object> getAllTokenClaims(String token) {
         try {

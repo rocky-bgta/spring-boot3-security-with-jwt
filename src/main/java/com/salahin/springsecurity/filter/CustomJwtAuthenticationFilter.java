@@ -4,6 +4,7 @@ import com.salahin.springsecurity.configuration.CustomUserDetailsService;
 import com.salahin.springsecurity.entity.JwtTokenInfoEntity;
 import com.salahin.springsecurity.entity.RoleEntity;
 import com.salahin.springsecurity.entity.UserEntity;
+import com.salahin.springsecurity.exception.CustomAccessDeniedException;
 import com.salahin.springsecurity.repository.JwtTokenRepository;
 import com.salahin.springsecurity.repository.UserRepository;
 import com.salahin.springsecurity.service.JwtTokenInfoService;
@@ -18,7 +19,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 @Component
 public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
@@ -83,9 +82,10 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 List<RoleEntity> roles = userEntity.getRoleList();
                 List<String> roleFromDB = roles.stream().map(r -> r.getRoleName()).toList();
 
-                if(new HashSet<>(rolesFromClaims).containsAll(roleFromDB) && new HashSet<>(roleFromDB).containsAll(rolesFromClaims)){
-                    System.out.printf("working");
-                }
+               /* if(!(new HashSet<>(rolesFromClaims).containsAll(roleFromDB) &&
+                        new HashSet<>(roleFromDB).containsAll(rolesFromClaims))){
+                    throw new CustomAccessDeniedException("Don't have rights to access this user");
+                }*/
 
             }
             /* else {
@@ -130,7 +130,7 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 // if refreshed token is not expired
                 if (!isRefreshTokenExpired) {
                     UserDetails userDetails = this.customUserDetailsService.loadUserByUsername(username);
-                    String newAccessToken = jwtTokenUtilService.getRefreshAccessToken(username);
+                    String newAccessToken = jwtTokenUtilService.getRenewAccessToken(username);
 
                     Object expObject = jwtTokenUtilService.getAllTokenClaims(newAccessToken).get("exp");
                     long accessTokenTime = ((Integer) expObject).longValue();

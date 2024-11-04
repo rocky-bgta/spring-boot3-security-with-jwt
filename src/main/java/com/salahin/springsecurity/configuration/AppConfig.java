@@ -2,8 +2,6 @@ package com.salahin.springsecurity.configuration;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.salahin.springsecurity.filter.CustomJwtAuthenticationFilter;
-import com.salahin.springsecurity.service.JwtTokenUtilService;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

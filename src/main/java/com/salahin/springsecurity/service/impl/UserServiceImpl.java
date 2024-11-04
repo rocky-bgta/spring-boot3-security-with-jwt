@@ -5,6 +5,7 @@ import com.salahin.springsecurity.entity.UserEntity;
 import com.salahin.springsecurity.model.UserModel;
 import com.salahin.springsecurity.repository.UserRepository;
 import com.salahin.springsecurity.service.UserService;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.ValidationException;
@@ -27,9 +28,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserModel saveUser(UserModel userModel) {
-        UserEntity userEntity; // = new UserEntity();
+        UserEntity userEntity;
         userEntity = modelMapper.map(userModel, UserEntity.class);
+        if (userModel.getPassword() == null || userModel.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password cannot be empty");
+        }
         userEntity.setPassword(bcryptEncoder.encode(userModel.getPassword()));
         userEntity = userRepository.save(userEntity);
         userModel.setId(userEntity.getId());

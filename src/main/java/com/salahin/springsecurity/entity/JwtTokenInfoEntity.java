@@ -41,6 +41,9 @@ public class JwtTokenInfoEntity {
 	@Column(name = "refreshed_token_exp_in")
 	private Long refreshedTokenExpIn;
 
+	@Column(name = "token_issue_time")
+	private Long tokenIssueTime;
+
 	@Column(name="status")
 	private boolean status;
 }

@@ -11,11 +11,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "role")
 public class RoleEntity {
+
 	@Id
-	@GeneratedValue(generator = "uuid")
-	@GenericGenerator(name = "uuid", strategy = "uuid2")
-	@Column(name = "id",unique = true)
-	private UUID id;
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", nullable = false)
+	private Integer id;
 	
 	@Column(name = "role_name")
 	private String roleName;

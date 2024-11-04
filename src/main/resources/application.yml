@@ -1,0 +1,24 @@
+# JWT property
+jwt:
+  secret: 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
+  access:
+    token:
+      expirationTimeInHours: 12
+  refresh:
+    token:
+      expirationTimeInDays: 7
+spring:
+  application:
+    name: selisegroup-assigenment
+  datasource:
+    password: root
+    url: jdbc:mysql://localhost:3306/selise?createDatabaseIfNotExist=true
+    username: root
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+  sql:
+    init:
+      data-locations: classpath:sql/user.sql,classpath:sql/role.sql
+      mode: always

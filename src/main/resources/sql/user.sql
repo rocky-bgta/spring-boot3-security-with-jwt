@@ -1,2 +1,2 @@
-INSERT INTO "user"("id", "email_verified", "password", "status", "username") VALUES ('4513b450-fccb-464f-ad74-d17f64ef7f8d', 'f', '$2a$10$siZvnuI6CqYdisNVoofYtODyRU21pmty9R1g7xs9nQzeDGac4jykO', 'f', 'salahin');
-INSERT INTO "user"("id", "email_verified", "password", "status", "username") VALUES ('e0933670-cb6a-4a49-be2f-a728fa202257', 'f', '$2a$10$oSsTVNVGIda.yu28u5aah.X/TJSIPdAjioE05vlndhIDZvVArObem', 'f', 'tuli');
+INSERT INTO user (username, password) VALUES ('john_doe', 'password123');
+INSERT INTO user (username, password) VALUES ('jane_doe', 'password456');

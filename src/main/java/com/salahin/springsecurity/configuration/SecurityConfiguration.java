@@ -27,7 +27,7 @@ public class SecurityConfiguration {
     private final CustomJwtAuthenticationFilter customJwtAuthenticationFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final CustomCorsConfiguration customCorsConfiguration;
+    //private final CustomCorsConfiguration customCorsConfiguration;
 
     public SecurityConfiguration(
             CustomUserDetailsService customUserDetailsService,
@@ -39,18 +39,13 @@ public class SecurityConfiguration {
         this.customJwtAuthenticationFilter = customJwtAuthenticationFilter;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
-        this.customCorsConfiguration = customCorsConfiguration;
+        //this.customCorsConfiguration = customCorsConfiguration;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-	
-	/*@Override
-	public void configure(AuthenticationManagerBuilder auth) throws Exception{
-		auth.userDetailsService(customUserDetailsService).passwordEncoder(passwordEncoder());
-	}*/
 
     @Bean
     AuthenticationProvider authenticationProvider() {
@@ -63,28 +58,26 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(corsConfig -> corsConfig.configurationSource(customCorsConfiguration))
+        http.csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(new AntPathRequestMatcher("/admin-user")).hasRole("ADMIN")
                         .requestMatchers(new AntPathRequestMatcher("/normal-user")).hasAnyRole("ADMIN", "USER")
-
                         .requestMatchers(
                                 new AntPathRequestMatcher("/authenticate"),
                                 new AntPathRequestMatcher("/register"),
+                                new AntPathRequestMatcher("/register-users"),
+                                new AntPathRequestMatcher("/authorization"),
                                 new AntPathRequestMatcher("/signing-out"),
-                                new AntPathRequestMatcher("/slack/**")).permitAll()
+                                new AntPathRequestMatcher("/slack/**")
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .exceptionHandling()
-                // it is a Global auth exception handler
-                .authenticationEntryPoint(customAuthenticationEntryPoint)
-                .accessDeniedHandler(customAccessDeniedHandler)
-                .and()
-
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                )
                 .sessionManagement(sessionManagement ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
@@ -92,47 +85,6 @@ public class SecurityConfiguration {
 
         return http.build();
     }
-
-/*	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
-	 return http.csrf().disable()
-			.formLogin().disable()
-			.httpBasic().disable()
-			.authorizeRequests()
-			.requestMatchers(AntPathRequestMatcher.antMatcher("/admin-user")).hasRole("ADMIN")
-			.requestMatchers(AntPathRequestMatcher.antMatcher("/normal-user")).hasAnyRole("ADMIN","USER")
-			.requestMatchers(AntPathRequestMatcher.antMatcher("/authenticate","/register")).permitAll().anyRequest().authenticated()
-			.and()
-			.exceptionHandling()
-			.authenticationEntryPoint(jwtAuthenticationEntryPoint)
-			.and()
-			.sessionManagement()
-			.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-			.and()
-			.addFilterBefore(customJwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class).build();
-	}*/
-
-	/*@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		return http
-				.csrf().disable()
-				.authorizeHttpRequests()
-				.requestMatchers("/admin-user").hasRole("ADMIN")
-				.requestMatchers("/normal-user").hasAnyRole("ADMIN","USER")
-				.requestMatchers("/authenticate","/register").permitAll().anyRequest().authenticated()
-				.and()
-				.sessionManagement()
-				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-				.and()
-				.addFilterBefore(customJwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-				.build();
-	}*/
-	
-	/*@Bean
-	@Override
-	public AuthenticationManager authenticationManagerBean() throws Exception {
-		return super.authenticationManagerBean();
-	}*/
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)

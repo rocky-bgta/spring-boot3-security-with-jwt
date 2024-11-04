@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Data
 public class UserModel {
-	private UUID id;
+	private Integer id;
 	private String username;
 
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

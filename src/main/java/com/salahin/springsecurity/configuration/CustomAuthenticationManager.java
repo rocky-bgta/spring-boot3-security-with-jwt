@@ -36,6 +36,6 @@ public class CustomAuthenticationManager implements AuthenticationManager {
             throw new BadCredentialsException("Invalid password.");
         }
 
-        return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
+        return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }
 }

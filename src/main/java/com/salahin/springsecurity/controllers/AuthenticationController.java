@@ -2,18 +2,14 @@ package com.salahin.springsecurity.controllers;
 
 import com.salahin.springsecurity.configuration.CustomAuthenticationManager;
 import com.salahin.springsecurity.configuration.CustomUserDetailsService;
-import com.salahin.springsecurity.model.UserModel;
 import com.salahin.springsecurity.service.JwtTokenUtilService;
 import com.salahin.springsecurity.model.AuthRequest;
 import com.salahin.springsecurity.model.AuthResponse;
 import com.salahin.springsecurity.service.JwtTokenInfoService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -67,10 +63,9 @@ public class AuthenticationController {
 
 
     @PostMapping("/signing-out")
-    public ResponseEntity<?> logoutUser(@RequestBody AuthRequest authRequest) {
-        this.jwtTokenInfoService.deleteAccessToken(authRequest.getUsername());
-        SecurityContextHolder.clearContext();
-        return new ResponseEntity<>("User has been logged out successfully", HttpStatus.OK);
+    public ResponseEntity<?> logoutUser(Authentication authentication) {
+        this.jwtTokenInfoService.deleteAccessToken(authentication.getName());
+        return ResponseEntity.ok("User has been logged out successfully");
     }
 
 }

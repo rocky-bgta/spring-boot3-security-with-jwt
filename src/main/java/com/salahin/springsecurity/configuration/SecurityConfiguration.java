@@ -69,8 +69,7 @@ public class SecurityConfiguration {
                                 new AntPathRequestMatcher("/register"),
                                 new AntPathRequestMatcher("/register-users"),
                                 new AntPathRequestMatcher("/authorization"),
-                                new AntPathRequestMatcher("/signing-out"),
-                                new AntPathRequestMatcher("/slack/**")
+                                                                new AntPathRequestMatcher("/slack/**")
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
